@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer - Sistem Koperasi</title>
+    <title>Customer - Sistem Faktur</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="assets/css/all.min.css">
 </head>
@@ -11,15 +11,15 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2><i class="fas fa-store"></i> Koperasi</h2>
+            <h2><i class="fas fa-file-invoice"></i> Sistem Faktur</h2>
         </div>
         <nav class="sidebar-nav">
             <ul>
                 <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
-                <li><a href="items.html"><i class="fas fa-box"></i> Item</a></li>
-                <li><a href="staff.html"><i class="fas fa-user-tie"></i> Petugas</a></li>
-                <li><a href="sales.html"><i class="fas fa-shopping-cart"></i> Penjualan</a></li>
+                <li><a href="produk.html"><i class="fas fa-box"></i> Produk</a></li>
+                <li><a href="perusahaan.html"><i class="fas fa-building"></i> Perusahaan</a></li>
+                <li><a href="faktur.html"><i class="fas fa-file-invoice-dollar"></i> Penjualan</a></li>
             </ul>
         </nav>
     </div>
@@ -29,9 +29,6 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
-                <button class="menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
                 <h1>Manajemen Customer</h1>
             </div>
             <div class="header-right">
@@ -76,34 +73,22 @@
             <div class="modal-body">
                 <form id="customerForm">
                     <input type="hidden" id="customerId" name="id">
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nama" class="form-label">Nama Lengkap</label>
-                            <input type="text" id="nama" name="nama" class="form-control" placeholder="Masukkan nama lengkap" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" id="email" name="email" class="form-control" placeholder="Masukkan email" required>
-                        </div>
-                    </div>
-                    
+
                     <div class="form-group">
-                        <label for="alamat" class="form-label">Alamat</label>
-                        <textarea id="alamat" name="alamat" class="form-control" rows="3" placeholder="Masukkan alamat lengkap" required></textarea>
+                        <label for="nama_customer" class="form-label">Nama Customer</label>
+                        <input type="text" id="nama_customer" name="nama_customer" class="form-control" placeholder="Masukkan nama customer" required>
                     </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="telp" class="form-label">Telepon</label>
-                            <input type="tel" id="telp" name="telp" class="form-control" placeholder="Masukkan nomor telepon" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="fax" class="form-label">Fax (Opsional)</label>
-                            <input type="text" id="fax" name="fax" class="form-control" placeholder="Masukkan nomor fax">
-                        </div>
+
+                    <div class="form-group">
+                        <label for="perusahaan_cust" class="form-label">Perusahaan (Opsional)</label>
+                        <select id="perusahaan_cust" name="perusahaan_cust" class="form-control">
+                            <option value="">Pilih Perusahaan (Individual jika kosong)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alamat" class="form-label">Alamat (Opsional)</label>
+                        <textarea id="alamat" name="alamat" class="form-control" rows="3" placeholder="Masukkan alamat customer"></textarea>
                     </div>
                 </form>
             </div>
@@ -127,6 +112,7 @@
             }
 
             async init() {
+                await this.loadPerusahaans();
                 await this.loadCustomers();
                 this.initEventListeners();
             }
@@ -139,9 +125,29 @@
                 });
             }
 
+            async loadPerusahaans() {
+                try {
+                    const response = await ApiUtils.get('/perusahaan');
+                    const perusahaans = response?.data || [];
+
+                    const select = document.getElementById('perusahaan_cust');
+                    select.innerHTML = '<option value="">Pilih Perusahaan (Individual jika kosong)</option>';
+
+                    perusahaans.forEach(perusahaan => {
+                        const option = document.createElement('option');
+                        option.value = perusahaan.id;
+                        option.textContent = perusahaan.nama_perusahaan;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading perusahaans:', error);
+                }
+            }
+
             async loadCustomers() {
                 try {
-                    this.customers = await ApiUtils.get('/customer') || [];
+                    const response = await ApiUtils.get('/customer');
+                    this.customers = response?.data || [];
                     this.renderCustomersTable();
                 } catch (error) {
                     console.error('Error loading customers:', error);
@@ -152,11 +158,13 @@
             renderCustomersTable() {
                 const columns = [
                     { field: 'id', title: 'ID' },
-                    { field: 'nama', title: 'Nama' },
-                    { field: 'email', title: 'Email' },
+                    { field: 'nama_customer', title: 'Nama Customer' },
+                    {
+                        field: 'perusahaan',
+                        title: 'Perusahaan',
+                        render: (value, row) => row.perusahaan ? row.perusahaan.nama_perusahaan : '<span class="badge badge-info">Individual</span>'
+                    },
                     { field: 'alamat', title: 'Alamat' },
-                    { field: 'telp', title: 'Telepon' },
-                    { field: 'fax', title: 'Fax' },
                     {
                         field: 'actions',
                         title: 'Aksi',
@@ -178,14 +186,14 @@
 
             async saveCustomer() {
                 const form = document.getElementById('customerForm');
-                
+
                 if (!FormUtils.validate(form)) {
                     UIUtils.showError('Harap lengkapi semua field yang diperlukan');
                     return;
                 }
 
                 const data = FormUtils.serialize(form);
-                
+
                 try {
                     // Show loading
                     const saveBtn = document.getElementById('saveBtn');
@@ -225,10 +233,10 @@
 
                 this.currentCustomerId = id;
                 document.getElementById('modalTitle').textContent = 'Edit Customer';
-                
+
                 const form = document.getElementById('customerForm');
                 FormUtils.populate(form, customer);
-                
+
                 UIUtils.showModal('customerModal');
             }
 
@@ -271,7 +279,7 @@
                 <h1>Sistem Koperasi - Daftar Customer</h1>
                 <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
             `;
-            
+
             // Add print footer
             const printFooter = document.createElement('div');
             printFooter.className = 'print-footer';
@@ -279,15 +287,15 @@
                 <p>Total Customer: ${customerManager.customers.length}</p>
                 <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
             `;
-            
+
             // Insert elements
             const content = document.querySelector('.content');
             content.insertBefore(printHeader, content.firstChild);
             content.appendChild(printFooter);
-            
+
             // Print
             window.print();
-            
+
             // Remove print elements after printing
             setTimeout(() => {
                 printHeader.remove();
@@ -303,3 +311,4 @@
     </script>
 </body>
 </html>
+

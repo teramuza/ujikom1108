@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produk - Sistem Faktur</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-file-invoice"></i> Sistem Faktur</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="produk.html"><i class="fas fa-box"></i> Produk</a></li>
+                <li><a href="perusahaan.html"><i class="fas fa-building"></i> Perusahaan</a></li>
+                <li><a href="faktur.html"><i class="fas fa-file-invoice-dollar"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>Manajemen Produk</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Product List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-box"></i> Daftar Produk</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary no-print" onclick="printProduks()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-primary no-print" onclick="showAddProdukModal()">
+                            <i class="fas fa-plus"></i> Tambah Produk
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="produksTable">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="produkModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="modalTitle">Tambah Produk</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="produkForm">
+                    <input type="hidden" id="produkId" name="id">
+
+                    <div class="form-group">
+                        <label for="nama_produk" class="form-label">Nama Produk</label>
+                        <input type="text" id="nama_produk" name="nama_produk" class="form-control" placeholder="Masukkan nama produk" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price" class="form-label">Harga</label>
+                            <input type="number" id="price" name="price" class="form-control" placeholder="Masukkan harga" min="0" step="0.01" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="jenis" class="form-label">Kategori/Jenis</label>
+                            <input type="text" id="jenis" name="jenis" class="form-control" placeholder="Masukkan kategori produk">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stock" class="form-label">Stok</label>
+                        <input type="number" id="stock" name="stock" class="form-control" placeholder="Masukkan jumlah stok" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('produkModal')">Batal</button>
+                <button type="submit" form="produkForm" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Update Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Update Stok</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="stockForm">
+                    <input type="hidden" id="stockProdukId">
+                    <p>Produk: <strong id="stockProdukNama"></strong></p>
+                    <p>Stok Saat Ini: <strong id="currentStock">0</strong></p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stockOperation" class="form-label">Operasi</label>
+                            <select id="stockOperation" name="operation" class="form-control" required>
+                                <option value="add">Tambah Stok</option>
+                                <option value="subtract">Kurangi Stok</option>
+                                <option value="set">Set Stok</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="stockAmount" class="form-label">Jumlah</label>
+                            <input type="number" id="stockAmount" name="stock" class="form-control" placeholder="Masukkan jumlah" min="1" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('stockModal')">Batal</button>
+                <button type="submit" form="stockForm" class="btn btn-success" id="updateStockBtn">
+                    <i class="fas fa-sync"></i> Update Stok
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Product management class
+        class ProdukManager {
+            constructor() {
+                this.produks = [];
+                this.categories = [];
+                this.currentProdukId = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadCategories();
+                await this.loadProduks();
+                await this.loadStats();
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // Form submissions
+                document.getElementById('produkForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveProduk();
+                });
+
+                document.getElementById('stockForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.updateStock();
+                });
+
+                // Search on Enter key
+                document.getElementById('searchProduk').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.searchProduks();
+                    }
+                });
+            }
+
+            async loadCategories() {
+                try {
+                    const response = await ApiUtils.get('/produk/categories');
+                    this.categories = response?.data || [];
+
+                    const select = document.getElementById('filterJenis');
+                    select.innerHTML = '<option value="">Semua Kategori</option>';
+
+                    this.categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                }
+            }
+
+            async loadProduks(search = '', jenis = '') {
+                try {
+                    let url = '/produk?limit=100';
+                    if (search) url += `&search=${encodeURIComponent(search)}`;
+                    if (jenis) url += `&jenis=${encodeURIComponent(jenis)}`;
+
+                    const response = await ApiUtils.get(url);
+                    this.produks = response?.data || [];
+                    this.renderProduksTable();
+                } catch (error) {
+                    console.error('Error loading produks:', error);
+                    UIUtils.showError('Gagal memuat data produk');
+                }
+            }
+
+            async loadStats() {
+                try {
+                    // Total products
+                    const response = await ApiUtils.get('/produk?limit=1');
+                    document.getElementById('totalProduk').textContent = response?.pagination?.totalItems || 0;
+
+                    // Low stock products
+                    const lowStock = await ApiUtils.get('/produk/low-stock?threshold=10');
+                    document.getElementById('lowStockCount').textContent = lowStock?.data?.length || 0;
+
+                    // Total categories
+                    document.getElementById('totalKategori').textContent = this.categories.length;
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            renderProduksTable() {
+                const columns = [
+                    { field: 'id', title: 'ID' },
+                    { field: 'nama_produk', title: 'Nama Produk' },
+                    {
+                        field: 'price',
+                        title: 'Harga',
+                        render: (value) => UIUtils.formatCurrency(value)
+                    },
+                    { field: 'jenis', title: 'Kategori' },
+                    {
+                        field: 'stock',
+                        title: 'Stok',
+                        render: (value) => {
+                            if (value === null || value === undefined) return '-';
+                            const stockClass = value <= 10 ? 'badge-danger' : value <= 20 ? 'badge-warning' : 'badge-success';
+                            return `<span class="badge ${stockClass}">${value}</span>`;
+                        }
+                    },
+                    {
+                        field: 'actions',
+                        title: 'Aksi',
+                        render: (value, row) => `
+                            <div class="actions">
+                                <button class="btn btn-sm btn-info" onclick="produkManager.updateStockModal(${row.id})" title="Update Stok">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="produkManager.editProduk(${row.id})" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="produkManager.deleteProduk(${row.id})" title="Hapus">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `
+                    }
+                ];
+
+                TableUtils.renderTable('produksTable', this.produks, columns);
+            }
+
+            async searchProduks() {
+                const search = document.getElementById('searchProduk').value.trim();
+                const jenis = document.getElementById('filterJenis').value;
+                await this.loadProduks(search, jenis);
+            }
+
+            async saveProduk() {
+                const form = document.getElementById('produkForm');
+
+                if (!FormUtils.validate(form)) {
+                    UIUtils.showError('Harap lengkapi semua field yang diperlukan');
+                    return;
+                }
+
+                const data = FormUtils.serialize(form);
+
+                // Convert numbers
+                data.price = parseFloat(data.price);
+                if (data.stock) data.stock = parseInt(data.stock);
+
+                try {
+                    const saveBtn = document.getElementById('saveBtn');
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                    saveBtn.disabled = true;
+
+                    let response;
+                    if (this.currentProdukId) {
+                        response = await ApiUtils.put(`/produk/${this.currentProdukId}`, data);
+                    } else {
+                        response = await ApiUtils.post('/produk', data);
+                    }
+
+                    if (response) {
+                        UIUtils.showSuccess(this.currentProdukId ? 'Produk berhasil diperbarui' : 'Produk berhasil ditambahkan');
+                        UIUtils.hideModal('produkModal');
+                        this.resetForm();
+                        await this.loadProduks();
+                        await this.loadStats();
+                        await this.loadCategories();
+                    }
+                } catch (error) {
+                    console.error('Error saving produk:', error);
+                    UIUtils.showError('Gagal menyimpan produk');
+                } finally {
+                    const saveBtn = document.getElementById('saveBtn');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+                    saveBtn.disabled = false;
+                }
+            }
+
+            editProduk(id) {
+                const produk = this.produks.find(p => p.id === id);
+                if (!produk) return;
+
+                this.currentProdukId = id;
+                document.getElementById('modalTitle').textContent = 'Edit Produk';
+
+                const form = document.getElementById('produkForm');
+                FormUtils.populate(form, produk);
+
+                UIUtils.showModal('produkModal');
+            }
+
+            async deleteProduk(id) {
+                const produk = this.produks.find(p => p.id === id);
+                if (!produk) return;
+
+                if (!UIUtils.confirmDelete(`Hapus produk "${produk.nama_produk}"?`)) {
+                    return;
+                }
+
+                try {
+                    await ApiUtils.delete(`/produk/${id}`);
+                    UIUtils.showSuccess('Produk berhasil dihapus');
+                    await this.loadProduks();
+                    await this.loadStats();
+                } catch (error) {
+                    console.error('Error deleting produk:', error);
+                    UIUtils.showError('Gagal menghapus produk');
+                }
+            }
+
+            updateStockModal(id) {
+                const produk = this.produks.find(p => p.id === id);
+                if (!produk) return;
+
+                document.getElementById('stockProdukId').value = id;
+                document.getElementById('stockProdukNama').textContent = produk.nama_produk;
+                document.getElementById('currentStock').textContent = produk.stock || 0;
+
+                // Reset form
+                document.getElementById('stockForm').reset();
+                document.getElementById('stockProdukId').value = id;
+
+                UIUtils.showModal('stockModal');
+            }
+
+            async updateStock() {
+                const form = document.getElementById('stockForm');
+
+                if (!FormUtils.validate(form)) {
+                    UIUtils.showError('Harap lengkapi semua field');
+                    return;
+                }
+
+                const produkId = document.getElementById('stockProdukId').value;
+                const data = FormUtils.serialize(form);
+                data.stock = parseInt(data.stock);
+
+                try {
+                    const btn = document.getElementById('updateStockBtn');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    btn.disabled = true;
+
+                    const response = await ApiUtils.request(`/produk/${produkId}/stock`, {
+                        method: 'PATCH',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response) {
+                        UIUtils.showSuccess('Stok berhasil diupdate');
+                        UIUtils.hideModal('stockModal');
+                        await this.loadProduks();
+                    }
+                } catch (error) {
+                    console.error('Error updating stock:', error);
+                    UIUtils.showError('Gagal mengupdate stok');
+                } finally {
+                    const btn = document.getElementById('updateStockBtn');
+                    btn.innerHTML = '<i class="fas fa-sync"></i> Update Stok';
+                    btn.disabled = false;
+                }
+            }
+
+            async viewLowStock() {
+                await this.loadProduks();
+                // Filter to show only low stock products
+                this.produks = this.produks.filter(p => p.stock !== null && p.stock <= 10);
+                this.renderProduksTable();
+                UIUtils.showInfo('Menampilkan produk dengan stok rendah (≤ 10)');
+            }
+
+            resetForm() {
+                this.currentProdukId = null;
+                document.getElementById('modalTitle').textContent = 'Tambah Produk';
+                FormUtils.reset(document.getElementById('produkForm'));
+            }
+        }
+
+        // Global functions
+        function showAddProdukModal() {
+            produkManager.resetForm();
+            UIUtils.showModal('produkModal');
+        }
+
+        function printProduks() {
+            const printHeader = document.createElement('div');
+            printHeader.className = 'print-header';
+            printHeader.innerHTML = `
+                <h1>Sistem Faktur - Daftar Produk</h1>
+                <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
+            `;
+
+            const printFooter = document.createElement('div');
+            printFooter.className = 'print-footer';
+            printFooter.innerHTML = `
+                <p>Total Produk: ${produkManager.produks.length}</p>
+                <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+            `;
+
+            const content = document.querySelector('.content');
+            content.insertBefore(printHeader, content.firstChild);
+            content.appendChild(printFooter);
+
+            window.print();
+
+            setTimeout(() => {
+                printHeader.remove();
+                printFooter.remove();
+            }, 1000);
+        }
+
+        // Initialize produk manager
+        let produkManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            produkManager = new ProdukManager();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perusahaan - Sistem Faktur</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-file-invoice"></i> Sistem Faktur</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="produk.html"><i class="fas fa-box"></i> Produk</a></li>
+                <li><a href="perusahaan.html"><i class="fas fa-building"></i> Perusahaan</a></li>
+                <li><a href="faktur.html"><i class="fas fa-file-invoice-dollar"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>Manajemen Perusahaan</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Company List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-building"></i> Daftar Perusahaan</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="searchPerusahaan" class="form-control" placeholder="Cari perusahaan..." style="width: 250px;">
+                        <button class="btn btn-info no-print" onclick="perusahaanManager.searchPerusahaan()">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                        <button class="btn btn-secondary no-print" onclick="printPerusahaans()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-primary no-print" onclick="showAddPerusahaanModal()">
+                            <i class="fas fa-plus"></i> Tambah Perusahaan
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="perusahaansTable">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Perusahaan Modal -->
+    <div id="perusahaanModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="modalTitle">Tambah Perusahaan</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="perusahaanForm">
+                    <input type="hidden" id="perusahaanId" name="id">
+
+                    <div class="form-group">
+                        <label for="nama_perusahaan" class="form-label">Nama Perusahaan</label>
+                        <input type="text" id="nama_perusahaan" name="nama_perusahaan" class="form-control" placeholder="Masukkan nama perusahaan" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alamat" class="form-label">Alamat</label>
+                        <textarea id="alamat" name="alamat" class="form-control" rows="3" placeholder="Masukkan alamat perusahaan"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="no_telp" class="form-label">No. Telepon</label>
+                            <input type="tel" id="no_telp" name="no_telp" class="form-control" placeholder="Masukkan nomor telepon">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fax" class="form-label">Fax</label>
+                            <input type="text" id="fax" name="fax" class="form-control" placeholder="Masukkan nomor fax">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('perusahaanModal')">Batal</button>
+                <button type="submit" form="perusahaanForm" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Customers Modal -->
+    <div id="customersModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="customersModalTitle">Customer Perusahaan</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="customersTable">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('customersModal')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Perusahaan management class
+        class PerusahaanManager {
+            constructor() {
+                this.perusahaans = [];
+                this.currentPerusahaanId = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadPerusahaans();
+                await this.loadStats();
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // Form submission
+                document.getElementById('perusahaanForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.savePerusahaan();
+                });
+
+                // Search on Enter key
+                document.getElementById('searchPerusahaan').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.searchPerusahaan();
+                    }
+                });
+            }
+
+            async loadPerusahaans(search = '') {
+                try {
+                    let url = '/perusahaan?withCustomers=true';
+                    if (search) url += `&search=${encodeURIComponent(search)}`;
+
+                    const response = await ApiUtils.get(url);
+                    this.perusahaans = response?.data || [];
+                    this.renderPerusahaansTable();
+                } catch (error) {
+                    console.error('Error loading perusahaans:', error);
+                    UIUtils.showError('Gagal memuat data perusahaan');
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await ApiUtils.get('/perusahaan/stats');
+                    document.getElementById('totalPerusahaan').textContent = response?.data?.total_perusahaan || 0;
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            renderPerusahaansTable() {
+                const columns = [
+                    { field: 'id', title: 'ID' },
+                    { field: 'nama_perusahaan', title: 'Nama Perusahaan' },
+                    { field: 'alamat', title: 'Alamat' },
+                    { field: 'no_telp', title: 'Telepon' },
+                    { field: 'fax', title: 'Fax' },
+                    {
+                        field: 'customers',
+                        title: 'Jumlah Customer',
+                        render: (value, row) => {
+                            const count = row.customers ? row.customers.length : 0;
+                            return count > 0
+                                ? `<button class="btn btn-sm btn-info" onclick="perusahaanManager.viewCustomers(${row.id})">${count} Customer</button>`
+                                : '0 Customer';
+                        }
+                    },
+                    {
+                        field: 'actions',
+                        title: 'Aksi',
+                        render: (value, row) => `
+                            <div class="actions">
+                                <button class="btn btn-sm btn-warning" onclick="perusahaanManager.editPerusahaan(${row.id})" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="perusahaanManager.deletePerusahaan(${row.id})" title="Hapus">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `
+                    }
+                ];
+
+                TableUtils.renderTable('perusahaansTable', this.perusahaans, columns);
+            }
+
+            async searchPerusahaan() {
+                const search = document.getElementById('searchPerusahaan').value.trim();
+                await this.loadPerusahaans(search);
+            }
+
+            async savePerusahaan() {
+                const form = document.getElementById('perusahaanForm');
+
+                if (!FormUtils.validate(form)) {
+                    UIUtils.showError('Harap lengkapi semua field yang diperlukan');
+                    return;
+                }
+
+                const data = FormUtils.serialize(form);
+
+                try {
+                    const saveBtn = document.getElementById('saveBtn');
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                    saveBtn.disabled = true;
+
+                    let response;
+                    if (this.currentPerusahaanId) {
+                        response = await ApiUtils.put(`/perusahaan/${this.currentPerusahaanId}`, data);
+                    } else {
+                        response = await ApiUtils.post('/perusahaan', data);
+                    }
+
+                    if (response) {
+                        UIUtils.showSuccess(this.currentPerusahaanId ? 'Perusahaan berhasil diperbarui' : 'Perusahaan berhasil ditambahkan');
+                        UIUtils.hideModal('perusahaanModal');
+                        this.resetForm();
+                        await this.loadPerusahaans();
+                        await this.loadStats();
+                    }
+                } catch (error) {
+                    console.error('Error saving perusahaan:', error);
+                    UIUtils.showError('Gagal menyimpan perusahaan');
+                } finally {
+                    const saveBtn = document.getElementById('saveBtn');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+                    saveBtn.disabled = false;
+                }
+            }
+
+            editPerusahaan(id) {
+                const perusahaan = this.perusahaans.find(p => p.id === id);
+                if (!perusahaan) return;
+
+                this.currentPerusahaanId = id;
+                document.getElementById('modalTitle').textContent = 'Edit Perusahaan';
+
+                const form = document.getElementById('perusahaanForm');
+                FormUtils.populate(form, perusahaan);
+
+                UIUtils.showModal('perusahaanModal');
+            }
+
+            async deletePerusahaan(id) {
+                const perusahaan = this.perusahaans.find(p => p.id === id);
+                if (!perusahaan) return;
+
+                if (!UIUtils.confirmDelete(`Hapus perusahaan "${perusahaan.nama_perusahaan}"?`)) {
+                    return;
+                }
+
+                try {
+                    await ApiUtils.delete(`/perusahaan/${id}`);
+                    UIUtils.showSuccess('Perusahaan berhasil dihapus');
+                    await this.loadPerusahaans();
+                    await this.loadStats();
+                } catch (error) {
+                    console.error('Error deleting perusahaan:', error);
+                    UIUtils.showError('Gagal menghapus perusahaan');
+                }
+            }
+
+            async viewCustomers(perusahaanId) {
+                try {
+                    const perusahaan = this.perusahaans.find(p => p.id === perusahaanId);
+                    if (!perusahaan) return;
+
+                    document.getElementById('customersModalTitle').textContent = `Customer - ${perusahaan.nama_perusahaan}`;
+
+                    const response = await ApiUtils.get(`/customer/perusahaan/${perusahaanId}`);
+                    const customers = response?.data || [];
+
+                    if (customers.length === 0) {
+                        document.getElementById('customersTable').innerHTML =
+                            '<div class="text-center">Belum ada customer terdaftar</div>';
+                    } else {
+                        const columns = [
+                            { field: 'id', title: 'ID' },
+                            { field: 'nama_customer', title: 'Nama Customer' },
+                            { field: 'alamat', title: 'Alamat' },
+                        ];
+
+                        TableUtils.renderTable('customersTable', customers, columns);
+                    }
+
+                    UIUtils.showModal('customersModal');
+                } catch (error) {
+                    console.error('Error loading customers:', error);
+                    UIUtils.showError('Gagal memuat data customer');
+                }
+            }
+
+            resetForm() {
+                this.currentPerusahaanId = null;
+                document.getElementById('modalTitle').textContent = 'Tambah Perusahaan';
+                FormUtils.reset(document.getElementById('perusahaanForm'));
+            }
+        }
+
+        // Global functions
+        function showAddPerusahaanModal() {
+            perusahaanManager.resetForm();
+            UIUtils.showModal('perusahaanModal');
+        }
+
+        function printPerusahaans() {
+            const printHeader = document.createElement('div');
+            printHeader.className = 'print-header';
+            printHeader.innerHTML = `
+                <h1>Sistem Faktur - Daftar Perusahaan</h1>
+                <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
+            `;
+
+            const printFooter = document.createElement('div');
+            printFooter.className = 'print-footer';
+            printFooter.innerHTML = `
+                <p>Total Perusahaan: ${perusahaanManager.perusahaans.length}</p>
+                <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+            `;
+
+            const content = document.querySelector('.content');
+            content.insertBefore(printHeader, content.firstChild);
+            content.appendChild(printFooter);
+
+            window.print();
+
+            setTimeout(() => {
+                printHeader.remove();
+                printFooter.remove();
+            }, 1000);
+        }
+
+        // Initialize perusahaan manager
+        let perusahaanManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            perusahaanManager = new PerusahaanManager();
+        });
+    </script>
+</body>
+</html>

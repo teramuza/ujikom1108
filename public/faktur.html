@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penjualan - Sistem Faktur</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+    <style>
+        .search-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .search-dropdown-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-dropdown-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .customer-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .customer-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .no-print, .sidebar, .header, .modal-footer {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .content {
+                padding: 0 !important;
+            }
+
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+
+            .print-company {
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            .print-address {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+
+            .print-title {
+                font-size: 20px;
+                font-weight: bold;
+                text-align: center;
+                margin: 20px 0;
+            }
+
+            .print-info {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 20px;
+            }
+
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+
+            .print-table th,
+            .print-table td {
+                border: 1px solid #000;
+                padding: 8px;
+                text-align: left;
+            }
+
+            .print-table th {
+                background-color: #f0f0f0;
+                font-weight: bold;
+            }
+
+            .print-total {
+                text-align: right;
+                margin-top: 20px;
+            }
+
+            .print-footer {
+                margin-top: 40px;
+                text-align: center;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-receipt"></i> Sistem Faktur</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="produk.html"><i class="fas fa-box"></i> Produk</a></li>
+                <li><a href="perusahaan.html"><i class="fas fa-building"></i> Perusahaan</a></li>
+                <li><a href="faktur.html" class="active"><i class="fas fa-file-invoice"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>Manajemen Penjualan</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Faktur List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-shopping-cart"></i> Daftar Penjualan</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary no-print" onclick="printFaktur()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-primary no-print" onclick="showAddFakturModal()">
+                            <i class="fas fa-plus"></i> Buat Penjualan Baru
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="fakturTable">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="fakturPagination" class="d-flex justify-content-between align-items-center mt-3 no-print">
+                        <div id="fakturInfo"></div>
+                        <div id="fakturPaginationButtons"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Faktur Modal -->
+    <div id="fakturModal" class="modal">
+        <div class="modal-content" style="max-width: 700px; margin: 2% auto;">
+            <div class="modal-header">
+                <h4 id="modalTitle">Buat Penjualan Baru</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="fakturForm">
+                    <input type="hidden" id="fakturId" name="id">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="no_faktur" class="form-label">No. Faktur</label>
+                            <input type="text" id="no_faktur" name="no_faktur" class="form-control" placeholder="Auto generate" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="due_date" class="form-label">Tanggal Jatuh Tempo</label>
+                            <input type="date" id="due_date" name="due_date" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_customer" class="form-label">Customer</label>
+                            <div class="search-select-container">
+                                <input type="text" id="customer_search" class="form-control" placeholder="Cari customer..." autocomplete="off">
+                                <input type="hidden" id="id_customer" name="id_customer" required>
+                                <div id="customer_dropdown" class="search-dropdown" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="id_perusahaan" class="form-label">Perusahaan</label>
+                            <input type="text" id="perusahaan_display" class="form-control" placeholder="Akan terisi otomatis" readonly>
+                            <input type="hidden" id="id_perusahaan" name="id_perusahaan">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="metode_bayar" class="form-label">Metode Bayar</label>
+                            <select id="metode_bayar" name="metode_bayar" class="form-control" required>
+                                <option value="Cash">Cash</option>
+                                <option value="Transfer">Transfer</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Tempo">Tempo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ppn" class="form-label">PPN (%)</label>
+                            <input type="number" id="ppn" name="ppn" class="form-control" min="0" max="100" step="0.1" value="11">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dp" class="form-label">Down Payment (DP)</label>
+                            <input type="number" id="dp" name="dp" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="grand_total" class="form-label">Grand Total</label>
+                            <input type="number" id="grand_total" name="grand_total" class="form-control" min="0" step="0.01" readonly>
+                            <small class="text-muted">Total akan dihitung otomatis dari item-item</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeFakturModal()">Batal</button>
+                <button type="button" class="btn btn-success" onclick="manageDetailFaktur()" id="manageDetailBtn" style="display: none;">
+                    <i class="fas fa-list"></i> Kelola Item
+                </button>
+                <button type="submit" form="fakturForm" class="btn btn-primary" id="saveFakturBtn">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Faktur Modal -->
+    <div id="detailFakturModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; margin: 2% auto;">
+            <div class="modal-header">
+                <h4 id="detailModalTitle">Detail Penjualan</h4>
+                <button class="close" onclick="closeDetailFakturModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Faktur Info -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Informasi Penjualan</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="fakturInfo">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Product Form -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-plus"></i> Tambah Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="detailForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="id_produk" class="form-label">Produk</label>
+                                    <select id="id_produk" name="id_produk" class="form-control" required>
+                                        <option value="">Pilih Produk</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="qty" class="form-label">Quantity</label>
+                                    <input type="number" id="qty" name="qty" class="form-control" min="1" step="1" value="1" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="price" class="form-label">Harga Satuan</label>
+                                    <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Subtotal</label>
+                                <div class="form-control" style="background-color: #f8f9fa;" id="subtotalDisplay">
+                                    Rp 0
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Tambah ke Penjualan
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Detail Items List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list"></i> Daftar Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="detailItemsTable">
+                            <div class="text-center">Belum ada produk</div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="row">
+                                <div class="col-md-8"></div>
+                                <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Subtotal: </strong>
+                                        <strong id="totalSubtotal">Rp 0</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                        <strong>PPN <span id="ppnPercent">(11%)</span>: </strong>
+                                        <strong id="ppnAmount">Rp 0</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>DP: </strong>
+                                        <strong id="dpAmount">Rp 0</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                        <strong style="font-size: 1.2em;">Grand Total: </strong>
+                                        <strong id="grandTotalDisplay" style="font-size: 1.3em; color: #667eea;">Rp 0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDetailFakturModal()">Tutup</button>
+                <button type="button" class="btn btn-primary" onclick="printFakturDetail()">
+                    <i class="fas fa-print"></i> Cetak Faktur
+                </button>
+                <button type="button" class="btn btn-success" onclick="saveAllChanges()">
+                    <i class="fas fa-save"></i> Simpan Semua
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Faktur management class
+        class FakturManager {
+            constructor() {
+                this.fakturs = [];
+                this.customers = [];
+                this.perusahaans = [];
+                this.produks = [];
+                this.currentFaktur = null;
+                this.currentDetailItems = [];
+                this.currentPage = 1;
+                this.currentLimit = 10;
+                this.currentSearch = '';
+                this.pagination = null;
+                this.init();
+            }
+
+            async init() {
+                console.log('FakturManager initializing...'); // Debug log
+                try {
+                await this.loadData();
+                this.initEventListeners();
+
+                    // Set active menu if NavUtils is available
+                    if (window.NavUtils) {
+                        NavUtils.setActiveMenu('faktur.html');
+                    }
+
+                    console.log('FakturManager initialized successfully'); // Debug log
+                } catch (error) {
+                    console.error('Error initializing FakturManager:', error);
+                }
+            }
+
+            async loadData() {
+                try {
+                    // Load customers, perusahaans, and produks
+                    const [customersResponse, perusahaansResponse, produksResponse] = await Promise.all([
+                        ApiUtils.get('/customer'),
+                        ApiUtils.get('/perusahaan'),
+                        ApiUtils.get('/produk')
+                    ]);
+
+                    this.customers = customersResponse?.data || [];
+                    this.perusahaans = perusahaansResponse?.data || [];
+                    this.produks = produksResponse?.data || [];
+
+                    console.log('Loaded customers:', this.customers.length); // Debug log
+                    console.log('Loaded perusahaans:', this.perusahaans.length); // Debug log
+                    console.log('Loaded produks:', this.produks.length); // Debug log
+
+                    this.populateCustomerSelect();
+                    this.populatePerusahaanSelect();
+                    this.populateProdukSelect();
+
+                    // Load fakturs with pagination
+                    await this.loadFakturs();
+
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    if (window.UIUtils) {
+                    UIUtils.showError('Gagal memuat data');
+                    } else {
+                        alert('Gagal memuat data');
+                    }
+                }
+            }
+
+            async loadFakturs() {
+                try {
+                    const params = new URLSearchParams({
+                        page: this.currentPage.toString(),
+                        limit: this.currentLimit.toString()
+                    });
+
+                    if (this.currentSearch) {
+                        params.append('search', this.currentSearch);
+                    }
+
+                    const faktursResponse = await ApiUtils.get(`/faktur?${params.toString()}`);
+
+                    this.fakturs = faktursResponse?.data || [];
+                    this.pagination = faktursResponse?.pagination || null;
+
+                    console.log('Loaded fakturs:', this.fakturs.length);
+                    console.log('Pagination:', this.pagination);
+
+                    this.renderFakturTable();
+                    this.renderPagination();
+
+                } catch (error) {
+                    console.error('Error loading fakturs:', error);
+                    this.fakturs = [];
+                    this.renderFakturTable();
+                }
+            }
+
+            initEventListeners() {
+                console.log('Initializing event listeners...'); // Debug log
+
+                // Faktur form submission
+                const fakturForm = document.getElementById('fakturForm');
+                if (fakturForm) {
+                    fakturForm.addEventListener('submit', (e) => {
+                        console.log('Form submit event triggered'); // Debug log
+                    e.preventDefault();
+                        this.saveFaktur();
+                    });
+                } else {
+                    console.error('fakturForm not found!');
+                }
+
+                // Alternative: Direct button click handler
+                const saveBtn = document.getElementById('saveFakturBtn');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', (e) => {
+                        console.log('Save button clicked'); // Debug log
+                    e.preventDefault();
+                        this.saveFaktur();
+                    });
+                } else {
+                    console.error('saveFakturBtn not found!');
+                }
+
+                // Detail form submission
+                document.getElementById('detailForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addDetailItem();
+                });
+
+                // Customer search functionality
+                this.initCustomerSearch();
+
+                // Product change handler - auto fill price
+                document.getElementById('id_produk').addEventListener('change', (e) => {
+                    this.fillProdukPrice(e.target.value);
+                });
+
+                // Quantity and price change handlers for subtotal calculation
+                document.getElementById('qty').addEventListener('input', () => this.calculateSubtotal());
+                document.getElementById('price').addEventListener('input', () => this.calculateSubtotal());
+
+                // PPN and DP change handlers for grand total calculation
+                document.getElementById('ppn').addEventListener('input', () => this.updateGrandTotal());
+                document.getElementById('dp').addEventListener('input', () => this.updateGrandTotal());
+
+                // Modal close handlers
+                document.querySelectorAll('.close').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        console.log('Close button clicked'); // Debug log
+                        const modal = e.target.closest('.modal');
+                        if (modal) {
+                            console.log('Closing modal:', modal.id); // Debug log
+                            if (window.UIUtils) {
+                                UIUtils.hideModal(modal.id);
+                            } else {
+                                modal.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+
+                // Click outside modal to close
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('modal')) {
+                        console.log('Clicked outside modal'); // Debug log
+                        if (window.UIUtils) {
+                            UIUtils.hideModal(e.target.id);
+                        } else {
+                            e.target.style.display = 'none';
+                        }
+                    }
+                });
+
+                // Set default due date to 30 days from now
+                const defaultDueDate = new Date();
+                defaultDueDate.setDate(defaultDueDate.getDate() + 30);
+                document.getElementById('due_date').value = defaultDueDate.toISOString().split('T')[0];
+            }
+
+            populateCustomerSelect() {
+                // Not needed anymore since we use searchable input
+                // Customers will be populated in search dropdown
+            }
+
+            initCustomerSearch() {
+                const searchInput = document.getElementById('customer_search');
+                const dropdown = document.getElementById('customer_dropdown');
+                const hiddenSelect = document.getElementById('id_customer');
+                let selectedIndex = -1;
+                let filteredCustomers = [];
+
+                // Search input handler
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    this.filterAndShowCustomers(searchTerm);
+                });
+
+                // Focus handler - show all customers
+                searchInput.addEventListener('focus', () => {
+                    this.filterAndShowCustomers('');
+                });
+
+                // Click outside to hide dropdown
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.search-select-container')) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+
+                // Keyboard navigation
+                searchInput.addEventListener('keydown', (e) => {
+                    const items = dropdown.querySelectorAll('.search-dropdown-item');
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                        this.updateActiveItem(items, selectedIndex);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        selectedIndex = Math.max(selectedIndex - 1, -1);
+                        this.updateActiveItem(items, selectedIndex);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (selectedIndex >= 0 && items[selectedIndex]) {
+                            items[selectedIndex].click();
+                        }
+                    } else if (e.key === 'Escape') {
+                        dropdown.style.display = 'none';
+                        selectedIndex = -1;
+                    }
+                });
+            }
+
+            filterAndShowCustomers(searchTerm) {
+                const dropdown = document.getElementById('customer_dropdown');
+
+                console.log('filterAndShowCustomers called with term:', searchTerm); // Debug log
+                console.log('Available customers for filtering:', this.customers.length); // Debug log
+
+                // Filter customers based on search term
+                const filteredCustomers = this.customers.filter(customer => {
+                    const searchableText = `${customer.nama_customer} ${customer.alamat}`.toLowerCase();
+                    return searchableText.includes(searchTerm);
+                });
+
+                console.log('Filtered customers:', filteredCustomers.length); // Debug log
+
+                // Show dropdown with filtered results
+                this.renderCustomerDropdown(filteredCustomers);
+                dropdown.style.display = filteredCustomers.length > 0 ? 'block' : 'none';
+
+                console.log('Dropdown display set to:', dropdown.style.display); // Debug log
+            }
+
+            renderCustomerDropdown(customers) {
+                const dropdown = document.getElementById('customer_dropdown');
+
+                dropdown.innerHTML = customers.map(customer => {
+                    const perusahaan = customer.perusahaan_cust
+                        ? this.perusahaans.find(p => p.id == customer.perusahaan_cust)
+                        : null;
+
+                    return `
+                        <div class="search-dropdown-item" data-customer-id="${customer.id}">
+                            <div class="customer-name">${customer.nama_customer}</div>
+                            <div class="customer-info">
+                                <div>${customer.alamat}</div>
+                                <div style="color: #007bff;">
+                                    ${perusahaan ? perusahaan.nama_perusahaan : 'Tanpa Perusahaan'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Add click handlers
+                dropdown.querySelectorAll('.search-dropdown-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const customerId = item.dataset.customerId;
+                        this.selectCustomer(customerId);
+                    });
+                });
+            }
+
+            selectCustomer(customerId) {
+                console.log('selectCustomer called with ID:', customerId); // Debug log
+                const customer = this.customers.find(c => c.id == customerId);
+                if (!customer) {
+                    console.error('Customer not found with ID:', customerId);
+                    return;
+                }
+
+                console.log('Selected customer:', customer); // Debug log
+
+                // Update search input and hidden input
+                const customerSearchField = document.getElementById('customer_search');
+                const customerIdField = document.getElementById('id_customer');
+
+                customerSearchField.value = customer.nama_customer;
+                customerIdField.value = customerId;
+
+                console.log('Customer ID set to:', customerIdField.value); // Debug log
+                console.log('Customer search set to:', customerSearchField.value); // Debug log
+
+                // Double check after setting
+                setTimeout(() => {
+                    console.log('Double check - Customer ID after timeout:', document.getElementById('id_customer').value);
+                }, 100);
+
+                // Auto-fill perusahaan
+                this.fillPerusahaanFromCustomer(customer);
+
+                // Hide dropdown
+                document.getElementById('customer_dropdown').style.display = 'none';
+            }
+
+            fillPerusahaanFromCustomer(customer) {
+                const perusahaanDisplay = document.getElementById('perusahaan_display');
+                const perusahaanHidden = document.getElementById('id_perusahaan');
+
+                if (customer.perusahaan_cust) {
+                    const perusahaan = this.perusahaans.find(p => p.id == customer.perusahaan_cust);
+                    if (perusahaan) {
+                        perusahaanDisplay.value = perusahaan.nama_perusahaan;
+                        perusahaanHidden.value = perusahaan.id;
+                    } else {
+                        perusahaanDisplay.value = 'Perusahaan tidak ditemukan';
+                        perusahaanHidden.value = '';
+                    }
+                } else {
+                    perusahaanDisplay.value = 'Tanpa Perusahaan';
+                    perusahaanHidden.value = '';
+                }
+            }
+
+            updateActiveItem(items, activeIndex) {
+                items.forEach((item, index) => {
+                    if (index === activeIndex) {
+                        item.classList.add('active');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+
+            populatePerusahaanSelect() {
+                const select = document.getElementById('id_perusahaan');
+                select.innerHTML = '<option value="">Pilih Perusahaan</option>';
+
+                this.perusahaans.forEach(perusahaan => {
+                    const option = document.createElement('option');
+                    option.value = perusahaan.id;
+                    option.textContent = perusahaan.nama_perusahaan;
+                    select.appendChild(option);
+                });
+            }
+
+            populateProdukSelect() {
+                const select = document.getElementById('id_produk');
+                select.innerHTML = '<option value="">Pilih Produk</option>';
+
+                this.produks.forEach(produk => {
+                    const option = document.createElement('option');
+                    option.value = produk.id;
+                    option.textContent = `${produk.nama_produk} (Stock: ${produk.stock})`;
+                    option.dataset.price = produk.harga_jual;
+                    option.dataset.stock = produk.stock;
+                    select.appendChild(option);
+                });
+            }
+
+            fillProdukPrice(produkId) {
+                const priceInput = document.getElementById('price');
+                const qtyInput = document.getElementById('qty');
+
+                if (produkId) {
+                    const produk = this.produks.find(p => p.id == produkId);
+                    if (produk) {
+                        priceInput.value = produk.harga_jual;
+                        qtyInput.max = produk.stock;
+                        this.calculateSubtotal();
+                    }
+                } else {
+                    priceInput.value = '';
+                    qtyInput.max = '';
+                    this.calculateSubtotal();
+                }
+            }
+
+            calculateSubtotal() {
+                const qty = parseFloat(document.getElementById('qty').value) || 0;
+                const price = parseFloat(document.getElementById('price').value) || 0;
+                const subtotal = qty * price;
+
+                document.getElementById('subtotalDisplay').textContent = this.formatCurrency(subtotal);
+            }
+
+            addDetailItem() {
+                const produkId = document.getElementById('id_produk').value;
+                const qty = parseFloat(document.getElementById('qty').value);
+                const price = parseFloat(document.getElementById('price').value);
+
+                if (!produkId || !qty || !price) {
+                    UIUtils.showError('Harap lengkapi semua field');
+                    return;
+                }
+
+                const produk = this.produks.find(p => p.id == produkId);
+                if (!produk) {
+                    UIUtils.showError('Produk tidak ditemukan');
+                    return;
+                }
+
+                if (qty > produk.stock) {
+                    UIUtils.showError(`Stock tidak mencukupi. Stock tersedia: ${produk.stock}`);
+                    return;
+                }
+
+                // Check if product already exists in detail items
+                const existingIndex = this.currentDetailItems.findIndex(item => item.id_produk == produkId);
+
+                if (existingIndex >= 0) {
+                    // Update existing item
+                    this.currentDetailItems[existingIndex].qty += qty;
+                    this.currentDetailItems[existingIndex].subtotal = this.currentDetailItems[existingIndex].qty * this.currentDetailItems[existingIndex].price;
+                    } else {
+                    // Add new item
+                    const detailItem = {
+                        id_produk: produkId,
+                        produk: produk,
+                        qty: qty,
+                        price: price,
+                        subtotal: qty * price
+                    };
+                    this.currentDetailItems.push(detailItem);
+                }
+
+                this.renderDetailItemsTable();
+                this.updateTotalCalculation();
+
+                // Reset form
+                document.getElementById('detailForm').reset();
+                document.getElementById('qty').value = 1;
+                document.getElementById('subtotalDisplay').textContent = 'Rp 0';
+
+                UIUtils.showSuccess('Produk berhasil ditambahkan');
+            }
+
+            renderDetailItemsTable() {
+                const tableContainer = document.getElementById('detailItemsTable');
+
+                if (this.currentDetailItems.length === 0) {
+                    tableContainer.innerHTML = '<div class="text-center">Belum ada produk</div>';
+                    return;
+                }
+
+                // Manual table creation since TableUtils might not be available
+                let tableHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Produk</th>
+                                    <th>Qty</th>
+                                    <th>Harga Satuan</th>
+                                    <th>Subtotal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                this.currentDetailItems.forEach((item, index) => {
+                    tableHTML += `
+                        <tr>
+                            <td>${item.produk.nama_produk}</td>
+                            <td>${item.qty}</td>
+                            <td>${this.formatCurrency(item.price)}</td>
+                            <td>${this.formatCurrency(item.subtotal)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="fakturManager.removeDetailItem(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                tableContainer.innerHTML = tableHTML;
+            }
+
+            removeDetailItem(index) {
+                if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+                    this.currentDetailItems.splice(index, 1);
+                    this.renderDetailItemsTable();
+                    this.updateTotalCalculation();
+                    UIUtils.showSuccess('Produk berhasil dihapus');
+                }
+            }
+
+            updateTotalCalculation() {
+                const subtotal = this.currentDetailItems.reduce((sum, item) => sum + item.subtotal, 0);
+                const ppnPercent = parseFloat(document.getElementById('ppn').value) || 0;
+                const dp = parseFloat(document.getElementById('dp').value) || 0;
+
+                const ppnAmount = (subtotal * ppnPercent) / 100;
+                const grandTotal = subtotal + ppnAmount - dp;
+
+                // Update display in detail modal
+                document.getElementById('totalSubtotal').textContent = this.formatCurrency(subtotal);
+                document.getElementById('ppnPercent').textContent = `(${ppnPercent}%)`;
+                document.getElementById('ppnAmount').textContent = this.formatCurrency(ppnAmount);
+                document.getElementById('dpAmount').textContent = this.formatCurrency(dp);
+                document.getElementById('grandTotalDisplay').textContent = this.formatCurrency(grandTotal);
+
+                // Update grand total in main form
+                document.getElementById('grand_total').value = grandTotal;
+            }
+
+            updateGrandTotal() {
+                this.updateTotalCalculation();
+            }
+
+            renderFakturTable() {
+                const tableContainer = document.getElementById('fakturTable');
+
+                if (this.fakturs.length === 0) {
+                    tableContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Belum ada penjualan yang dibuat.</p>
+                            <button class="btn btn-primary" onclick="showAddFakturModal()">
+                                <i class="fas fa-plus"></i> Buat Penjualan Pertama
+                            </button>
+                            </div>
+                    `;
+                    return;
+                }
+
+                // Manual table creation since TableUtils might not be available
+                let tableHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>No. Faktur</th>
+                                    <th>Customer</th>
+                                    <th>Perusahaan</th>
+                                    <th>Due Date</th>
+                                    <th>Metode Bayar</th>
+                                    <th>Grand Total</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                this.fakturs.forEach(faktur => {
+                    tableHTML += `
+                        <tr>
+                            <td>${faktur.no_faktur}</td>
+                            <td>${faktur.customer?.nama_customer || '-'}</td>
+                            <td>${faktur.perusahaan?.nama_perusahaan || '-'}</td>
+                            <td>${new Date(faktur.due_date).toLocaleDateString('id-ID')}</td>
+                            <td>${faktur.metode_bayar}</td>
+                            <td>${this.formatCurrency(faktur.grand_total)}</td>
+                            <td>${this.getActionButtons(faktur)}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                            </tbody>
+                        </table>
+                        </div>
+                    `;
+
+                tableContainer.innerHTML = tableHTML;
+            }
+
+            renderPagination() {
+                const infoContainer = document.getElementById('fakturInfo');
+                const buttonsContainer = document.getElementById('fakturPaginationButtons');
+
+                if (!this.pagination) {
+                    infoContainer.innerHTML = '';
+                    buttonsContainer.innerHTML = '';
+                    return;
+                }
+
+                // Show info
+                const start = ((this.pagination.current_page - 1) * this.pagination.per_page) + 1;
+                const end = Math.min(this.pagination.current_page * this.pagination.per_page, this.pagination.total);
+                infoContainer.innerHTML = `Menampilkan ${start}-${end} dari ${this.pagination.total} data`;
+
+                // Show pagination buttons
+                let buttonsHTML = '';
+
+                // Previous button
+                if (this.pagination.current_page > 1) {
+                    buttonsHTML += `<button class="btn btn-sm btn-outline-primary" onclick="fakturManager.goToPage(${this.pagination.current_page - 1})">« Prev</button> `;
+                }
+
+                // Page numbers
+                const maxPages = 5;
+                let startPage = Math.max(1, this.pagination.current_page - Math.floor(maxPages / 2));
+                let endPage = Math.min(this.pagination.total_pages, startPage + maxPages - 1);
+
+                if (endPage - startPage + 1 < maxPages) {
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    if (i === this.pagination.current_page) {
+                        buttonsHTML += `<button class="btn btn-sm btn-primary">${i}</button> `;
+                    } else {
+                        buttonsHTML += `<button class="btn btn-sm btn-outline-primary" onclick="fakturManager.goToPage(${i})">${i}</button> `;
+                    }
+                }
+
+                // Next button
+                if (this.pagination.current_page < this.pagination.total_pages) {
+                    buttonsHTML += `<button class="btn btn-sm btn-outline-primary" onclick="fakturManager.goToPage(${this.pagination.current_page + 1})">Next »</button>`;
+                }
+
+                buttonsContainer.innerHTML = buttonsHTML;
+            }
+
+            async goToPage(page) {
+                this.currentPage = page;
+                await this.loadFakturs();
+            }
+
+            async searchFakturs(searchTerm) {
+                this.currentSearch = searchTerm;
+                this.currentPage = 1; // Reset to first page
+                await this.loadFakturs();
+            }
+
+            async changeLimitFakturs(limit) {
+                this.currentLimit = parseInt(limit);
+                this.currentPage = 1; // Reset to first page
+                await this.loadFakturs();
+            }
+
+            getStatusBadge(faktur) {
+                const today = new Date();
+                const dueDate = new Date(faktur.due_date);
+
+                if (dueDate < today) {
+                    return '<span class="badge badge-danger">Overdue</span>';
+                } else if (dueDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)) {
+                    return '<span class="badge badge-warning">Due Soon</span>';
+                } else {
+                    return '<span class="badge badge-success">Active</span>';
+                }
+            }
+
+            getActionButtons(faktur) {
+                return `
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary" onclick="fakturManager.editFaktur(${faktur.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                        <button class="btn btn-sm btn-info" onclick="fakturManager.viewFaktur(${faktur.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="fakturManager.deleteFaktur(${faktur.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                `;
+            }
+
+            async saveFaktur() {
+                console.log('saveFaktur method called'); // Debug log
+
+                try {
+                    // Manual form data collection as fallback
+                    const formData = this.getFormData();
+                    console.log('Form data collected:', formData); // Debug log
+
+                    const isEdit = !!formData.id;
+
+                    // Validation
+                    console.log('Validating customer ID:', formData.id_customer); // Debug log
+                    if (!formData.id_customer || formData.id_customer === '') {
+                        alert('Harap pilih customer terlebih dahulu');
+                        console.error('Customer validation failed. Customer ID:', formData.id_customer);
+                        return;
+                    }
+                    if (!formData.due_date) {
+                        alert('Harap tentukan tanggal jatuh tempo');
+                        return;
+                    }
+
+                    // Prepare data for API
+                    const fakturData = {
+                        due_date: formData.due_date,
+                        metode_bayar: formData.metode_bayar,
+                        ppn: parseFloat(formData.ppn) || 0,
+                        dp: parseFloat(formData.dp) || 0,
+                        id_customer: parseInt(formData.id_customer),
+                        id_perusahaan: formData.id_perusahaan ? parseInt(formData.id_perusahaan) : null,
+                        detailItems: this.currentDetailItems.map(item => ({
+                            id_produk: item.id_produk,
+                            qty: item.qty,
+                            price: item.price
+                        }))
+                    };
+
+                    console.log('Saving faktur to API:', fakturData);
+
+                    // Call API
+                    let response;
+                    if (isEdit && formData.id) {
+                        response = await ApiUtils.put(`/faktur/${formData.id}`, fakturData);
+                    } else {
+                        response = await ApiUtils.post('/faktur', fakturData);
+                    }
+
+                    console.log('API Response:', response);
+
+                    // Set current faktur for detail management
+                    this.currentFaktur = response.data;
+
+                    // Show success message
+                    if (window.UIUtils) {
+                        UIUtils.showSuccess(isEdit ? 'Penjualan berhasil diupdate' : 'Penjualan berhasil dibuat!');
+                    } else {
+                        alert(isEdit ? 'Penjualan berhasil diupdate' : 'Penjualan berhasil dibuat!');
+                    }
+
+                    // Reload fakturs and close modal
+                    await this.loadFakturs();
+
+                    if (window.UIUtils) {
+                        UIUtils.hideModal('fakturModal');
+                    } else {
+                        document.getElementById('fakturModal').style.display = 'none';
+                    }
+
+                    // Reset form
+                    document.getElementById('fakturForm').reset();
+                    this.currentDetailItems = [];
+
+                } catch (error) {
+                    console.error('Error saving faktur:', error);
+                    alert('Gagal menyimpan faktur: ' + error.message);
+                }
+            }
+
+            getFormData() {
+                const form = document.getElementById('fakturForm');
+                const formData = {};
+
+                // Get all form elements
+                const elements = form.querySelectorAll('input, select, textarea');
+                elements.forEach(element => {
+                    if (element.name) {
+                        formData[element.name] = element.value;
+                        console.log(`Form field ${element.name}:`, element.value); // Debug each field
+                    }
+                });
+
+                // Special check for customer field
+                const customerField = document.getElementById('id_customer');
+                const customerSearchField = document.getElementById('customer_search');
+                console.log('Customer field element:', customerField);
+                console.log('Customer field value:', customerField?.value);
+                console.log('Customer search field value:', customerSearchField?.value);
+
+                return formData;
+            }
+
+            async editFaktur(id) {
+                try {
+                    // Load faktur data
+                    const response = await ApiUtils.get(`/faktur/${id}`);
+                    const faktur = response.data;
+
+                    // Populate form
+                    document.getElementById('modalTitle').textContent = 'Edit Penjualan';
+                    document.getElementById('fakturId').value = faktur.id;
+                    document.getElementById('no_faktur').value = faktur.no_faktur;
+                    document.getElementById('due_date').value = faktur.due_date.split('T')[0];
+                    document.getElementById('metode_bayar').value = faktur.metode_bayar;
+                    document.getElementById('ppn').value = faktur.ppn;
+                    document.getElementById('dp').value = faktur.dp;
+                    document.getElementById('grand_total').value = faktur.grand_total;
+
+                    // Set customer
+                    if (faktur.customer) {
+                        document.getElementById('customer_search').value = faktur.customer.nama_customer;
+                        document.getElementById('id_customer').value = faktur.customer.id;
+                    }
+
+                    // Set perusahaan
+                    if (faktur.perusahaan) {
+                        document.getElementById('perusahaan_display').value = faktur.perusahaan.nama_perusahaan;
+                        document.getElementById('id_perusahaan').value = faktur.perusahaan.id;
+                    }
+
+                    // Set detail items
+                    this.currentDetailItems = faktur.detailFakturs?.map(detail => ({
+                        id_produk: detail.id_produk,
+                        produk: detail.produk,
+                        qty: detail.qty,
+                        price: detail.price,
+                        subtotal: detail.subtotal
+                    })) || [];
+
+                    // Show modal
+                    if (window.UIUtils) {
+                        UIUtils.showModal('fakturModal');
+                    } else {
+                        document.getElementById('fakturModal').style.display = 'block';
+                    }
+
+                } catch (error) {
+                    console.error('Error loading faktur:', error);
+                    alert('Gagal memuat data faktur: ' + error.message);
+                }
+            }
+
+            async viewFaktur(id) {
+                try {
+                    // Load and show faktur detail
+                    const response = await ApiUtils.get(`/faktur/${id}`);
+                    const faktur = response.data;
+
+                    // Set current faktur and items for detail view
+                    this.currentFaktur = faktur;
+                    this.currentDetailItems = faktur.detailFakturs?.map(detail => ({
+                        id_produk: detail.id_produk,
+                        produk: detail.produk,
+                        qty: detail.qty,
+                        price: detail.price,
+                        subtotal: detail.subtotal
+                    })) || [];
+
+                    // Show faktur info
+                    document.getElementById('fakturInfo').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>No. Faktur:</strong> ${faktur.no_faktur}<br>
+                                <strong>Customer:</strong> ${faktur.customer?.nama_customer || '-'}<br>
+                                <strong>Alamat:</strong> ${faktur.customer?.alamat || '-'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Perusahaan:</strong> ${faktur.perusahaan?.nama_perusahaan || 'Tanpa Perusahaan'}<br>
+                                <strong>Due Date:</strong> ${new Date(faktur.due_date).toLocaleDateString('id-ID')}<br>
+                                <strong>Metode Bayar:</strong> ${faktur.metode_bayar} | <strong>PPN:</strong> ${faktur.ppn}%
+                            </div>
+                        </div>
+                    `;
+
+                    this.renderDetailItemsTable();
+                    this.updateTotalCalculation();
+
+                    if (window.UIUtils) {
+                        UIUtils.showModal('detailFakturModal');
+                    } else {
+                        document.getElementById('detailFakturModal').style.display = 'block';
+                    }
+
+                } catch (error) {
+                    console.error('Error viewing faktur:', error);
+                    alert('Gagal memuat detail faktur: ' + error.message);
+                }
+            }
+
+            async deleteFaktur(id) {
+                if (!confirm('Apakah Anda yakin ingin menghapus faktur ini?')) {
+                    return;
+                }
+
+                try {
+                    await ApiUtils.delete(`/faktur/${id}`);
+
+                    if (window.UIUtils) {
+                        UIUtils.showSuccess('Faktur berhasil dihapus');
+                    } else {
+                        alert('Faktur berhasil dihapus');
+                    }
+
+                    // Reload fakturs
+                    await this.loadFakturs();
+
+                } catch (error) {
+                    console.error('Error deleting faktur:', error);
+                    alert('Gagal menghapus faktur: ' + error.message);
+                }
+            }
+
+            formatCurrency(amount) {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR'
+                }).format(amount);
+            }
+        }
+
+        // Global functions
+        function showAddFakturModal() {
+            console.log('showAddFakturModal called'); // Debug log
+
+            try {
+                document.getElementById('modalTitle').textContent = 'Buat Penjualan Baru';
+                document.getElementById('fakturForm').reset();
+                document.getElementById('fakturId').value = '';
+
+                // Reset customer search
+                const customerSearchField = document.getElementById('customer_search');
+                const customerIdField = document.getElementById('id_customer');
+                const perusahaanDisplayField = document.getElementById('perusahaan_display');
+                const perusahaanIdField = document.getElementById('id_perusahaan');
+                const customerDropdown = document.getElementById('customer_dropdown');
+
+                if (customerSearchField) customerSearchField.value = '';
+                if (customerIdField) customerIdField.value = '';
+                if (perusahaanDisplayField) perusahaanDisplayField.value = '';
+                if (perusahaanIdField) perusahaanIdField.value = '';
+                if (customerDropdown) customerDropdown.style.display = 'none';
+
+                console.log('Fields reset - Customer ID:', customerIdField?.value); // Debug log
+
+                // Set default due date
+                const defaultDueDate = new Date();
+                defaultDueDate.setDate(defaultDueDate.getDate() + 30);
+                document.getElementById('due_date').value = defaultDueDate.toISOString().split('T')[0];
+
+                // Reset detail items
+                if (fakturManager) {
+                    fakturManager.currentDetailItems = [];
+                }
+
+                // Reset button state
+                const manageBtn = document.getElementById('manageDetailBtn');
+                const saveBtn = document.getElementById('saveFakturBtn');
+                if (manageBtn) manageBtn.style.display = 'none';
+                if (saveBtn) saveBtn.textContent = 'Simpan';
+
+                // Show modal
+                if (window.UIUtils) {
+                    UIUtils.showModal('fakturModal');
+                } else {
+                    document.getElementById('fakturModal').style.display = 'block';
+                }
+
+                console.log('Modal opened successfully'); // Debug log
+
+            } catch (error) {
+                console.error('Error opening modal:', error);
+            }
+        }
+
+        function closeFakturModal() {
+            console.log('closeFakturModal called'); // Debug log
+            const modal = document.getElementById('fakturModal');
+            if (window.UIUtils) {
+                UIUtils.hideModal('fakturModal');
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+
+        function manageDetailFaktur() {
+            // Get current faktur data
+            let formData;
+            if (window.FormUtils && typeof FormUtils.getFormData === 'function') {
+                formData = FormUtils.getFormData('fakturForm');
+            } else {
+                // Fallback to manual form data collection
+                formData = fakturManager.getFormData();
+            }
+
+            if (!formData.id_customer) {
+                UIUtils.showError('Harap pilih customer terlebih dahulu');
+                return;
+            }
+
+            // Show faktur info in detail modal
+            const perusahaan = fakturManager.perusahaans.find(p => p.id == formData.id_perusahaan);
+            const customer = fakturManager.customers.find(c => c.id == formData.id_customer);
+
+            document.getElementById('fakturInfo').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>No. Faktur:</strong> ${formData.no_faktur || 'Auto Generate'}<br>
+                        <strong>Customer:</strong> ${customer?.nama_customer || '-'}<br>
+                        <strong>Alamat:</strong> ${customer?.alamat || '-'}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Perusahaan:</strong> ${perusahaan?.nama_perusahaan || 'Tanpa Perusahaan'}<br>
+                        <strong>Due Date:</strong> ${formData.due_date ? new Date(formData.due_date).toLocaleDateString('id-ID') : '-'}<br>
+                        <strong>Metode Bayar:</strong> ${formData.metode_bayar || '-'} | <strong>PPN:</strong> ${formData.ppn || 0}%
+                    </div>
+                </div>
+            `;
+
+            fakturManager.renderDetailItemsTable();
+            fakturManager.updateTotalCalculation();
+
+            UIUtils.showModal('detailFakturModal');
+        }
+
+        async function saveAllChanges() {
+            if (!fakturManager.currentFaktur || !fakturManager.currentFaktur.id) {
+                UIUtils.showError('Tidak ada faktur yang dipilih');
+                return;
+            }
+
+            try {
+                console.log('Saving detail changes for faktur:', fakturManager.currentFaktur.id);
+                console.log('Current detail items:', fakturManager.currentDetailItems);
+
+                // Prepare detail items data
+                const detailItems = fakturManager.currentDetailItems.map(item => ({
+                    id_produk: item.id_produk,
+                    qty: item.qty,
+                    price: item.price
+                }));
+
+                if (detailItems.length === 0) {
+                    UIUtils.showError('Minimal harus ada 1 item produk');
+                    return;
+                }
+
+                // Save to database
+                const response = await ApiUtils.put(`/faktur/${fakturManager.currentFaktur.id}/details`, {
+                    detailItems: detailItems
+                });
+
+                console.log('Save response:', response);
+
+                // Update current faktur data
+                if (response.data) {
+                    fakturManager.currentFaktur = response.data;
+                }
+
+                // Update grand total in main form
+                fakturManager.updateTotalCalculation();
+
+                // Reload fakturs list
+                await fakturManager.loadFakturs();
+
+                // Close detail modal
+                UIUtils.hideModal('detailFakturModal');
+
+                // Show manage detail button
+                document.getElementById('manageDetailBtn').style.display = 'inline-block';
+
+                UIUtils.showSuccess('Detail penjualan berhasil disimpan ke database');
+
+            } catch (error) {
+                console.error('Error saving detail changes:', error);
+                UIUtils.showError('Gagal menyimpan detail penjualan: ' + error.message);
+            }
+        }
+
+        function printFakturDetail() {
+            // Prepare print content
+            const originalContent = document.body.innerHTML;
+            const fakturInfo = document.getElementById('fakturInfo').innerHTML;
+            const detailTable = document.getElementById('detailItemsTable').innerHTML;
+            const totals = document.querySelector('#detailFakturModal .card-body .mt-3').innerHTML;
+
+            // Create print content
+            const printContent = `
+                <div class="print-header">
+                    <div class="print-company">SISTEM FAKTUR</div>
+                    <div class="print-address">Alamat Perusahaan Anda<br>Telepon: (021) 1234-5678</div>
+                </div>
+
+                <div class="print-title">FAKTUR PENJUALAN</div>
+
+                <div class="print-info">
+                    ${fakturInfo}
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    ${detailTable}
+                </div>
+
+                <div class="print-total">
+                    ${totals}
+                </div>
+
+                <div class="print-footer">
+                    <p>Terima kasih atas kepercayaan Anda</p>
+                    <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}</p>
+                </div>
+            `;
+
+            // Replace body content for printing
+            document.body.innerHTML = printContent;
+
+            // Print
+            window.print();
+
+            // Restore original content
+            document.body.innerHTML = originalContent;
+
+            // Reinitialize the page
+            location.reload();
+        }
+
+        function printFaktur() {
+            // Print the current faktur list
+            const originalContent = document.body.innerHTML;
+            const tableContent = document.getElementById('fakturTable').innerHTML;
+
+            const printContent = `
+                <div class="print-header">
+                    <div class="print-company">SISTEM FAKTUR</div>
+                    <div class="print-address">Laporan Daftar Faktur</div>
+                </div>
+
+                <div class="print-title">DAFTAR FAKTUR PENJUALAN</div>
+
+                <div style="margin-bottom: 20px;">
+                    ${tableContent}
+                </div>
+
+                <div class="print-footer">
+                    <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}</p>
+                </div>
+            `;
+
+            document.body.innerHTML = printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            location.reload();
+        }
+
+        // Global search and filter functions
+        function searchFakturs() {
+            const searchTerm = document.getElementById('searchFaktur').value;
+            if (fakturManager) {
+                fakturManager.searchFakturs(searchTerm);
+            }
+        }
+
+        function changeLimitFaktur() {
+            const limit = document.getElementById('limitFaktur').value;
+            if (fakturManager) {
+                fakturManager.changeLimitFakturs(limit);
+            }
+        }
+
+        // Initialize when page loads
+        let fakturManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded, creating FakturManager...'); // Debug log
+            try {
+                fakturManager = new FakturManager();
+                console.log('FakturManager created:', fakturManager); // Debug log
+
+                // Test save function accessibility
+                window.testSave = function() {
+                    console.log('Testing save function...');
+                    if (fakturManager && typeof fakturManager.saveFaktur === 'function') {
+                        console.log('Save function is accessible');
+                        fakturManager.saveFaktur();
+                    } else {
+                        console.error('Save function not accessible');
+                    }
+                };
+
+                // Test customer selection
+                window.testCustomer = function() {
+                    console.log('Available customers:', fakturManager.customers);
+                    if (fakturManager.customers.length > 0) {
+                        console.log('Selecting first customer...');
+                        fakturManager.selectCustomer(fakturManager.customers[0].id);
+                    }
+                };
+
+                // Manual customer selection
+                window.selectTestCustomer = function(customerId) {
+                    if (fakturManager) {
+                        fakturManager.selectCustomer(customerId);
+                    }
+                };
+
+                // Debug customer field
+                window.debugCustomer = function() {
+                    const customerField = document.getElementById('id_customer');
+                    const customerSearchField = document.getElementById('customer_search');
+                    const perusahaanField = document.getElementById('id_perusahaan');
+
+                    console.log('=== CUSTOMER DEBUG ===');
+                    console.log('Customer hidden field:', customerField);
+                    console.log('Customer hidden field value:', customerField?.value);
+                    console.log('Customer search field:', customerSearchField);
+                    console.log('Customer search field value:', customerSearchField?.value);
+                    console.log('Perusahaan field value:', perusahaanField?.value);
+                    console.log('Available customers:', fakturManager?.customers?.length || 0);
+                    console.log('======================');
+                };
+
+                // Force set customer for testing
+                window.forceSetCustomer = function(customerId) {
+                    const customerField = document.getElementById('id_customer');
+                    const customerSearchField = document.getElementById('customer_search');
+
+                    if (customerField) {
+                        customerField.value = customerId;
+                        console.log('Forced customer ID to:', customerId);
+                    }
+
+                    if (fakturManager && fakturManager.customers) {
+                        const customer = fakturManager.customers.find(c => c.id == customerId);
+                        if (customer && customerSearchField) {
+                            customerSearchField.value = customer.nama_customer;
+                            console.log('Forced customer name to:', customer.nama_customer);
+                        }
+                    }
+                };
+
+                // Global function to close detail faktur modal
+                window.closeDetailFakturModal = function() {
+                    console.log('Closing detail faktur modal'); // Debug log
+                    if (window.UIUtils) {
+                        UIUtils.hideModal('detailFakturModal');
+                    } else {
+                        document.getElementById('detailFakturModal').style.display = 'none';
+                    }
+                };
+
+                // Add click outside to close modal
+                window.addEventListener('click', function(event) {
+                    const detailModal = document.getElementById('detailFakturModal');
+                    if (event.target === detailModal) {
+                        closeDetailFakturModal();
+                    }
+                });
+
+                // Add ESC key to close modal
+                window.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        const detailModal = document.getElementById('detailFakturModal');
+                        if (detailModal && detailModal.style.display === 'block') {
+                            closeDetailFakturModal();
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error creating FakturManager:', error);
+            }
+        });
+    </script>
+</body>
+</html>

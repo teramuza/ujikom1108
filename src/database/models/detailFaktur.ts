@@ -1,6 +1,6 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, Sequelize, BelongsToGetAssociationMixin, Association } from 'sequelize';
 
-export class DetailFaktur extends Model<InferAttributes<DetailFaktur>, InferCreationAttributes<DetailFaktur, { omit: 'id' | 'subtotal' }>> {
+export class DetailFaktur extends Model<InferAttributes<DetailFaktur>, InferCreationAttributes<DetailFaktur, { omit: 'id' }>> {
     declare id: CreationOptional<number>;
     declare id_produk: number;
     declare no_faktur: string;

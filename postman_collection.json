@@ -547,6 +547,190 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "Faktur",
+            "item": [
+                {
+                    "name": "Get All Faktur",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/faktur?page=1&limit=10&search=",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Faktur by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/faktur/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Faktur (Simple)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"due_date\": \"2024-12-31\",\n    \"metode_bayar\": \"Transfer Bank\",\n    \"ppn\": 11,\n    \"dp\": 500000,\n    \"id_customer\": 1,\n    \"id_perusahaan\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/faktur",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Faktur with Detail Items",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"due_date\": \"2024-12-31\",\n    \"metode_bayar\": \"Transfer Bank\",\n    \"ppn\": 11,\n    \"dp\": 1000000,\n    \"id_customer\": 1,\n    \"id_perusahaan\": 1,\n    \"detailItems\": [\n        {\n            \"id_produk\": 1,\n            \"qty\": 2,\n            \"price\": 8500000\n        },\n        {\n            \"id_produk\": 2,\n            \"qty\": 1,\n            \"price\": 5000000\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/faktur",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Faktur Individual Customer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"due_date\": \"2024-12-25\",\n    \"metode_bayar\": \"Tunai\",\n    \"ppn\": 0,\n    \"dp\": 0,\n    \"id_customer\": 2,\n    \"detailItems\": [\n        {\n            \"id_produk\": 1,\n            \"qty\": 1,\n            \"price\": 8500000\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/faktur",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Faktur",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"due_date\": \"2025-01-15\",\n    \"metode_bayar\": \"Transfer Bank\",\n    \"ppn\": 11,\n    \"dp\": 2000000,\n    \"id_customer\": 1,\n    \"id_perusahaan\": 1,\n    \"detailItems\": [\n        {\n            \"id_produk\": 1,\n            \"qty\": 3,\n            \"price\": 8500000\n        },\n        {\n            \"id_produk\": 3,\n            \"qty\": 2,\n            \"price\": 3000000\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/faktur/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Faktur",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/faktur/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Detail Faktur",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/faktur/1/details",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "1", "details"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Detail Faktur",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"detailItems\": [\n        {\n            \"id_produk\": 1,\n            \"qty\": 3,\n            \"price\": 8500000\n        },\n        {\n            \"id_produk\": 2,\n            \"qty\": 1,\n            \"price\": 5000000\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/faktur/1/details",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "1", "details"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Faktur Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/faktur/stats",
+                            "host": ["{{base_url}}"],
+                            "path": ["faktur", "stats"]
+                        }
+                    }
+                }
+            ]
         }
     ]
 }

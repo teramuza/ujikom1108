@@ -11,7 +11,6 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <i class="fas fa-store fa-3x" style="color: #667eea; margin-bottom: 1rem;"></i>
                 <h1>Sistem Faktur</h1>
                 <p>Silakan masuk ke akun Anda</p>
             </div>
@@ -116,16 +115,28 @@
                 console.log('Attempting login...', formData.username);
 
                 let response;
+                let loginError = null;
+
                 // Try with ApiUtils first, fallback to fetch
                 try {
                     response = await ApiUtils.post('/auth/login', formData);
                 } catch (apiError) {
                     console.warn('ApiUtils failed, trying fetch:', apiError);
-                    response = await performLogin(formData);
+                    
+                    // Store the API error for later use
+                    loginError = apiError;
+                    
+                    try {
+                        response = await performLogin(formData);
+                    } catch (fetchError) {
+                        // If both methods fail, throw the more specific error
+                        throw loginError || fetchError;
+                    }
                 }
 
                 console.log('Login response:', response);
 
+                // Check if login was successful
                 if (response && response.token && response.user) {
                     // Store authentication data immediately
                     localStorage.setItem('auth_token', response.token);
@@ -150,23 +161,36 @@
                     // Don't restore button state since we're redirecting
                     return;
 
+                } else if (response && response.message) {
+                    // Server returned an error message
+                    throw new Error(response.message);
                 } else {
-                    console.error('Invalid response format:', response);
-                    throw new Error('Format response tidak valid');
+                    // Unexpected response format
+                    console.error('Unexpected response format:', response);
+                    throw new Error('Response dari server tidak valid');
                 }
 
             } catch (error) {
                 console.error('Login error:', error);
 
                 let errorMessage = 'Terjadi kesalahan saat login';
-                if (error.message.includes('401') || error.message.includes('password') || error.message.includes('username')) {
-                    errorMessage = 'Username atau password salah';
-                } else if (error.message.includes('400')) {
-                    errorMessage = 'Data login tidak lengkap';
-                } else if (error.message.includes('500')) {
-                    errorMessage = 'Terjadi kesalahan server';
-                } else if (error.message) {
-                    errorMessage = error.message;
+                
+                // Handle specific error messages
+                if (error.message) {
+                    if (error.message.includes('Username atau password salah') || 
+                        error.message.includes('password') || 
+                        error.message.includes('username')) {
+                        errorMessage = 'Username atau password salah';
+                    } else if (error.message.includes('400') || error.message.includes('tidak lengkap')) {
+                        errorMessage = 'Data login tidak lengkap';
+                    } else if (error.message.includes('500') || error.message.includes('server')) {
+                        errorMessage = 'Terjadi kesalahan server';
+                    } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                        errorMessage = 'Tidak dapat terhubung ke server';
+                    } else {
+                        // Use the exact error message from server
+                        errorMessage = error.message;
+                    }
                 }
 
                 if (window.UIUtils) {
