@@ -22,6 +22,3 @@ npm-debug.log
 .history
 
 .env
-
-# Typescript
-/dist
