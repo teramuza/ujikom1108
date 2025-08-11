@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistem Koperasi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-store"></i> Koperasi</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="items.html"><i class="fas fa-box"></i> Item</a></li>
+                <li><a href="staff.html"><i class="fas fa-user-tie"></i> Petugas</a></li>
+                <li><a href="sales.html"><i class="fas fa-shopping-cart"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCustomers">0</div>
+                    <div class="stat-label">Total Customer</div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalItems">0</div>
+                    <div class="stat-label">Total Item</div>
+                    <div class="stat-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStaff">0</div>
+                    <div class="stat-label">Total Petugas</div>
+                    <div class="stat-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalSales">0</div>
+                    <div class="stat-label">Total Penjualan</div>
+                    <div class="stat-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-rocket"></i> Aksi Cepat</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2" style="flex-wrap: wrap;">
+                        <a href="customers.html" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Tambah Customer
+                        </a>
+                        <a href="items.html" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Tambah Item
+                        </a>
+                        <a href="sales.html" class="btn btn-warning">
+                            <i class="fas fa-shopping-cart"></i> Buat Penjualan
+                        </a>
+                        <a href="staff.html" class="btn btn-danger">
+                            <i class="fas fa-user-tie"></i> Kelola Petugas
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Dashboard specific functions
+        class Dashboard {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                await this.loadStats();
+            }
+
+            async loadStats() {
+                try {
+                    // Load customers count
+                    const customers = await ApiUtils.get('/customer');
+                    document.getElementById('totalCustomers').textContent = customers?.length || 0;
+
+                    // Load items count
+                    const items = await ApiUtils.get('/item');
+                    document.getElementById('totalItems').textContent = items?.length || 0;
+
+                    // Load staff count
+                    const staff = await ApiUtils.get('/petugas');
+                    document.getElementById('totalStaff').textContent = staff?.length || 0;
+
+                    // Load sales count
+                    const sales = await ApiUtils.get('/sales');
+                    document.getElementById('totalSales').textContent = sales?.length || 0;
+
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+        }
+
+        // Initialize dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new Dashboard();
+        });
+    </script>
+</body>
+</html>

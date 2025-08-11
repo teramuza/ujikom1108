@@ -1,0 +1,552 @@
+{
+    "info": {
+        "name": "Sistem Faktur API",
+        "description": "API Collection untuk sistem faktur dengan relasi Customer, Produk, Perusahaan, dan Faktur",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:4000/api/v1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Admin User\",\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "register"]
+                        }
+                    }
+                },
+                {
+                    "name": "Login User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "login"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Perusahaan",
+            "item": [
+                {
+                    "name": "Get All Perusahaan",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan?page=1&limit=10&search=&withCustomers=false",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "withCustomers",
+                                    "value": "false"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Perusahaan by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan/1?withCustomers=true",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan", "1"],
+                            "query": [
+                                {
+                                    "key": "withCustomers",
+                                    "value": "true"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Perusahaan",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_perusahaan\": \"PT. Contoh Indonesia\",\n    \"alamat\": \"Jl. Sudirman No. 123, Jakarta\",\n    \"no_telp\": \"021-123456\",\n    \"fax\": \"021-123457\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Perusahaan",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_perusahaan\": \"PT. Contoh Indonesia Updated\",\n    \"alamat\": \"Jl. Sudirman No. 124, Jakarta\",\n    \"no_telp\": \"021-123456\",\n    \"fax\": \"021-123457\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Perusahaan",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Perusahaan Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/perusahaan/stats",
+                            "host": ["{{base_url}}"],
+                            "path": ["perusahaan", "stats"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Customer",
+            "item": [
+                {
+                    "name": "Get All Customer",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer?page=1&limit=10&search=&perusahaan_id=&individual=false",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "perusahaan_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "individual",
+                                    "value": "false"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Customer by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Customer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_customer\": \"John Doe\",\n    \"perusahaan_cust\": 1,\n    \"alamat\": \"Jl. Merdeka No. 45, Bandung\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customer",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Individual Customer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_customer\": \"Jane Smith\",\n    \"alamat\": \"Jl. Kemerdekaan No. 67, Surabaya\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customer",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Customer",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_customer\": \"John Doe Updated\",\n    \"perusahaan_cust\": 1,\n    \"alamat\": \"Jl. Merdeka No. 46, Bandung\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customer/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Customer",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Customers by Perusahaan",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer/perusahaan/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "perusahaan", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Individual Customers",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer/individual?page=1&limit=10&search=",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "individual"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Customer Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customer/stats",
+                            "host": ["{{base_url}}"],
+                            "path": ["customer", "stats"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Produk",
+            "item": [
+                {
+                    "name": "Get All Produk",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/produk?page=1&limit=10&search=&jenis=",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk"],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "jenis",
+                                    "value": ""
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Produk by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/produk/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Produk",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_produk\": \"Laptop Dell Inspiron\",\n    \"price\": 8500000,\n    \"jenis\": \"Elektronik\",\n    \"stock\": 25\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/produk",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Produk",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nama_produk\": \"Laptop Dell Inspiron 15 3000\",\n    \"price\": 8750000,\n    \"jenis\": \"Elektronik\",\n    \"stock\": 20\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/produk/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Produk",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/produk/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Stock - Add",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"stock\": 10,\n    \"operation\": \"add\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/produk/1/stock",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1", "stock"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Stock - Subtract",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"stock\": 5,\n    \"operation\": \"subtract\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/produk/1/stock",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1", "stock"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Stock - Set",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"stock\": 100,\n    \"operation\": \"set\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/produk/1/stock",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "1", "stock"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Low Stock Produk",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/produk/low-stock?threshold=10",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "low-stock"],
+                            "query": [
+                                {
+                                    "key": "threshold",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Jenis Produk",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/produk/categories",
+                            "host": ["{{base_url}}"],
+                            "path": ["produk", "categories"]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

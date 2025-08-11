@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer - Sistem Koperasi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-store"></i> Koperasi</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="items.html"><i class="fas fa-box"></i> Item</a></li>
+                <li><a href="staff.html"><i class="fas fa-user-tie"></i> Petugas</a></li>
+                <li><a href="sales.html"><i class="fas fa-shopping-cart"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Manajemen Customer</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Customer List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-users"></i> Daftar Customer</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary no-print" onclick="printCustomers()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-primary no-print" onclick="showAddCustomerModal()">
+                            <i class="fas fa-plus"></i> Tambah Customer
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="customersTable">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="modalTitle">Tambah Customer</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <input type="hidden" id="customerId" name="id">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nama" class="form-label">Nama Lengkap</label>
+                            <input type="text" id="nama" name="nama" class="form-control" placeholder="Masukkan nama lengkap" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="Masukkan email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="alamat" class="form-label">Alamat</label>
+                        <textarea id="alamat" name="alamat" class="form-control" rows="3" placeholder="Masukkan alamat lengkap" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="telp" class="form-label">Telepon</label>
+                            <input type="tel" id="telp" name="telp" class="form-control" placeholder="Masukkan nomor telepon" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fax" class="form-label">Fax (Opsional)</label>
+                            <input type="text" id="fax" name="fax" class="form-control" placeholder="Masukkan nomor fax">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('customerModal')">Batal</button>
+                <button type="submit" form="customerForm" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Customer management class
+        class CustomerManager {
+            constructor() {
+                this.customers = [];
+                this.currentCustomerId = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadCustomers();
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // Form submission
+                document.getElementById('customerForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveCustomer();
+                });
+            }
+
+            async loadCustomers() {
+                try {
+                    this.customers = await ApiUtils.get('/customer') || [];
+                    this.renderCustomersTable();
+                } catch (error) {
+                    console.error('Error loading customers:', error);
+                    UIUtils.showError('Gagal memuat data customer');
+                }
+            }
+
+            renderCustomersTable() {
+                const columns = [
+                    { field: 'id', title: 'ID' },
+                    { field: 'nama', title: 'Nama' },
+                    { field: 'email', title: 'Email' },
+                    { field: 'alamat', title: 'Alamat' },
+                    { field: 'telp', title: 'Telepon' },
+                    { field: 'fax', title: 'Fax' },
+                    {
+                        field: 'actions',
+                        title: 'Aksi',
+                        render: (value, row) => `
+                            <div class="actions">
+                                <button class="btn btn-sm btn-warning" onclick="customerManager.editCustomer(${row.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="customerManager.deleteCustomer(${row.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `
+                    }
+                ];
+
+                TableUtils.renderTable('customersTable', this.customers, columns);
+            }
+
+            async saveCustomer() {
+                const form = document.getElementById('customerForm');
+                
+                if (!FormUtils.validate(form)) {
+                    UIUtils.showError('Harap lengkapi semua field yang diperlukan');
+                    return;
+                }
+
+                const data = FormUtils.serialize(form);
+                
+                try {
+                    // Show loading
+                    const saveBtn = document.getElementById('saveBtn');
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                    saveBtn.disabled = true;
+
+                    let response;
+                    if (this.currentCustomerId) {
+                        // Update existing customer
+                        response = await ApiUtils.put(`/customer/${this.currentCustomerId}`, data);
+                    } else {
+                        // Create new customer
+                        response = await ApiUtils.post('/customer', data);
+                    }
+
+                    if (response) {
+                        UIUtils.showSuccess(this.currentCustomerId ? 'Customer berhasil diperbarui' : 'Customer berhasil ditambahkan');
+                        UIUtils.hideModal('customerModal');
+                        this.resetForm();
+                        await this.loadCustomers();
+                    }
+                } catch (error) {
+                    console.error('Error saving customer:', error);
+                    UIUtils.showError('Gagal menyimpan customer');
+                } finally {
+                    // Reset button
+                    const saveBtn = document.getElementById('saveBtn');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+                    saveBtn.disabled = false;
+                }
+            }
+
+            editCustomer(id) {
+                const customer = this.customers.find(c => c.id === id);
+                if (!customer) return;
+
+                this.currentCustomerId = id;
+                document.getElementById('modalTitle').textContent = 'Edit Customer';
+                
+                const form = document.getElementById('customerForm');
+                FormUtils.populate(form, customer);
+                
+                UIUtils.showModal('customerModal');
+            }
+
+            async deleteCustomer(id) {
+                const customer = this.customers.find(c => c.id === id);
+                if (!customer) return;
+
+                if (!UIUtils.confirmDelete(`Hapus customer "${customer.nama}"?`)) {
+                    return;
+                }
+
+                try {
+                    await ApiUtils.delete(`/customer/${id}`);
+                    UIUtils.showSuccess('Customer berhasil dihapus');
+                    await this.loadCustomers();
+                } catch (error) {
+                    console.error('Error deleting customer:', error);
+                    UIUtils.showError('Gagal menghapus customer');
+                }
+            }
+
+            resetForm() {
+                this.currentCustomerId = null;
+                document.getElementById('modalTitle').textContent = 'Tambah Customer';
+                FormUtils.reset(document.getElementById('customerForm'));
+            }
+        }
+
+        // Global functions
+        function showAddCustomerModal() {
+            customerManager.resetForm();
+            UIUtils.showModal('customerModal');
+        }
+
+        function printCustomers() {
+            // Add print header
+            const printHeader = document.createElement('div');
+            printHeader.className = 'print-header';
+            printHeader.innerHTML = `
+                <h1>Sistem Koperasi - Daftar Customer</h1>
+                <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
+            `;
+            
+            // Add print footer
+            const printFooter = document.createElement('div');
+            printFooter.className = 'print-footer';
+            printFooter.innerHTML = `
+                <p>Total Customer: ${customerManager.customers.length}</p>
+                <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+            `;
+            
+            // Insert elements
+            const content = document.querySelector('.content');
+            content.insertBefore(printHeader, content.firstChild);
+            content.appendChild(printFooter);
+            
+            // Print
+            window.print();
+            
+            // Remove print elements after printing
+            setTimeout(() => {
+                printHeader.remove();
+                printFooter.remove();
+            }, 1000);
+        }
+
+        // Initialize customer manager
+        let customerManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            customerManager = new CustomerManager();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item - Sistem Koperasi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-store"></i> Koperasi</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="customers.html"><i class="fas fa-users"></i> Customer</a></li>
+                <li><a href="items.html"><i class="fas fa-box"></i> Item</a></li>
+                <li><a href="staff.html"><i class="fas fa-user-tie"></i> Petugas</a></li>
+                <li><a href="sales.html"><i class="fas fa-shopping-cart"></i> Penjualan</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Manajemen Item</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Item List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-box"></i> Daftar Item</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary no-print" onclick="printItems()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-primary no-print" onclick="showAddItemModal()">
+                            <i class="fas fa-plus"></i> Tambah Item
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="itemsTable">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="modalTitle">Tambah Item</h4>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    <input type="hidden" id="itemId" name="id">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nama_item" class="form-label">Nama Item</label>
+                            <input type="text" id="nama_item" name="nama_item" class="form-control" placeholder="Masukkan nama item" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="uom" class="form-label">Unit of Measure (UOM)</label>
+                            <select id="uom" name="uom" class="form-control" required>
+                                <option value="">Pilih UOM</option>
+                                <option value="pcs">Pieces (pcs)</option>
+                                <option value="pack">Pack</option>
+                                <option value="box">Box</option>
+                                <option value="kg">Kilogram (kg)</option>
+                                <option value="gram">Gram</option>
+                                <option value="liter">Liter</option>
+                                <option value="ml">Milliliter (ml)</option>
+                                <option value="meter">Meter</option>
+                                <option value="cm">Centimeter (cm)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="harga_beli" class="form-label">Harga Beli (Rp)</label>
+                            <input type="number" id="harga_beli" name="harga_beli" class="form-control" placeholder="0" min="0" step="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="harga_jual" class="form-label">Harga Jual (Rp)</label>
+                            <input type="number" id="harga_jual" name="harga_jual" class="form-control" placeholder="0" min="0" step="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Keuntungan</label>
+                        <div class="form-control" style="background-color: #f8f9fa;" id="profitDisplay">
+                            Masukkan harga beli dan jual untuk melihat keuntungan
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="UIUtils.hideModal('itemModal')">Batal</button>
+                <button type="submit" form="itemForm" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Item management class
+        class ItemManager {
+            constructor() {
+                this.items = [];
+                this.currentItemId = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadItems();
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // Form submission
+                document.getElementById('itemForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveItem();
+                });
+
+                // Calculate profit when prices change
+                const hargaBeli = document.getElementById('harga_beli');
+                const hargaJual = document.getElementById('harga_jual');
+                
+                hargaBeli.addEventListener('input', () => this.calculateProfit());
+                hargaJual.addEventListener('input', () => this.calculateProfit());
+            }
+
+            calculateProfit() {
+                const hargaBeli = parseFloat(document.getElementById('harga_beli').value) || 0;
+                const hargaJual = parseFloat(document.getElementById('harga_jual').value) || 0;
+                const profit = hargaJual - hargaBeli;
+                const profitPercent = hargaBeli > 0 ? ((profit / hargaBeli) * 100) : 0;
+                
+                const profitDisplay = document.getElementById('profitDisplay');
+                
+                if (hargaBeli > 0 && hargaJual > 0) {
+                    const profitText = profit >= 0 ? 
+                        `Keuntungan: ${UIUtils.formatCurrency(profit)} (${profitPercent.toFixed(2)}%)` :
+                        `Rugi: ${UIUtils.formatCurrency(Math.abs(profit))} (${Math.abs(profitPercent).toFixed(2)}%)`;
+                    
+                    profitDisplay.textContent = profitText;
+                    profitDisplay.style.color = profit >= 0 ? '#28a745' : '#dc3545';
+                } else {
+                    profitDisplay.textContent = 'Masukkan harga beli dan jual untuk melihat keuntungan';
+                    profitDisplay.style.color = '#666';
+                }
+            }
+
+            async loadItems() {
+                try {
+                    this.items = await ApiUtils.get('/item') || [];
+                    this.renderItemsTable();
+                } catch (error) {
+                    console.error('Error loading items:', error);
+                    UIUtils.showError('Gagal memuat data item');
+                }
+            }
+
+            renderItemsTable() {
+                const columns = [
+                    { field: 'id', title: 'ID' },
+                    { field: 'nama_item', title: 'Nama Item' },
+                    { field: 'uom', title: 'UOM' },
+                    { 
+                        field: 'harga_beli', 
+                        title: 'Harga Beli',
+                        render: (value) => UIUtils.formatCurrency(value)
+                    },
+                    { 
+                        field: 'harga_jual', 
+                        title: 'Harga Jual',
+                        render: (value) => UIUtils.formatCurrency(value)
+                    },
+                    {
+                        field: 'profit',
+                        title: 'Keuntungan',
+                        render: (value, row) => {
+                            const profit = row.harga_jual - row.harga_beli;
+                            const profitPercent = row.harga_beli > 0 ? ((profit / row.harga_beli) * 100) : 0;
+                            const color = profit >= 0 ? '#28a745' : '#dc3545';
+                            return `<span style="color: ${color};">${UIUtils.formatCurrency(profit)} (${profitPercent.toFixed(1)}%)</span>`;
+                        }
+                    },
+                    {
+                        field: 'actions',
+                        title: 'Aksi',
+                        render: (value, row) => `
+                            <div class="actions">
+                                <button class="btn btn-sm btn-warning" onclick="itemManager.editItem(${row.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="itemManager.deleteItem(${row.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `
+                    }
+                ];
+
+                TableUtils.renderTable('itemsTable', this.items, columns);
+            }
+
+            async saveItem() {
+                const form = document.getElementById('itemForm');
+                
+                if (!FormUtils.validate(form)) {
+                    UIUtils.showError('Harap lengkapi semua field yang diperlukan');
+                    return;
+                }
+
+                const data = FormUtils.serialize(form);
+                
+                // Validate that selling price is higher than buying price
+                const hargaBeli = parseFloat(data.harga_beli);
+                const hargaJual = parseFloat(data.harga_jual);
+                
+                if (hargaJual < hargaBeli) {
+                    if (!confirm('Harga jual lebih rendah dari harga beli. Yakin ingin melanjutkan?')) {
+                        return;
+                    }
+                }
+                
+                try {
+                    // Show loading
+                    const saveBtn = document.getElementById('saveBtn');
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                    saveBtn.disabled = true;
+
+                    let response;
+                    if (this.currentItemId) {
+                        // Update existing item
+                        response = await ApiUtils.put(`/item/${this.currentItemId}`, data);
+                    } else {
+                        // Create new item
+                        response = await ApiUtils.post('/item', data);
+                    }
+
+                    if (response) {
+                        UIUtils.showSuccess(this.currentItemId ? 'Item berhasil diperbarui' : 'Item berhasil ditambahkan');
+                        UIUtils.hideModal('itemModal');
+                        this.resetForm();
+                        await this.loadItems();
+                    }
+                } catch (error) {
+                    console.error('Error saving item:', error);
+                    UIUtils.showError('Gagal menyimpan item');
+                } finally {
+                    // Reset button
+                    const saveBtn = document.getElementById('saveBtn');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+                    saveBtn.disabled = false;
+                }
+            }
+
+            editItem(id) {
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                this.currentItemId = id;
+                document.getElementById('modalTitle').textContent = 'Edit Item';
+                
+                const form = document.getElementById('itemForm');
+                FormUtils.populate(form, item);
+                
+                // Recalculate profit
+                this.calculateProfit();
+                
+                UIUtils.showModal('itemModal');
+            }
+
+            async deleteItem(id) {
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                if (!UIUtils.confirmDelete(`Hapus item "${item.nama_item}"?`)) {
+                    return;
+                }
+
+                try {
+                    await ApiUtils.delete(`/item/${id}`);
+                    UIUtils.showSuccess('Item berhasil dihapus');
+                    await this.loadItems();
+                } catch (error) {
+                    console.error('Error deleting item:', error);
+                    UIUtils.showError('Gagal menghapus item');
+                }
+            }
+
+            resetForm() {
+                this.currentItemId = null;
+                document.getElementById('modalTitle').textContent = 'Tambah Item';
+                FormUtils.reset(document.getElementById('itemForm'));
+                document.getElementById('profitDisplay').textContent = 'Masukkan harga beli dan jual untuk melihat keuntungan';
+                document.getElementById('profitDisplay').style.color = '#666';
+            }
+        }
+
+        // Global functions
+        function showAddItemModal() {
+            itemManager.resetForm();
+            UIUtils.showModal('itemModal');
+        }
+
+        function printItems() {
+            // Add print header
+            const printHeader = document.createElement('div');
+            printHeader.className = 'print-header';
+            printHeader.innerHTML = `
+                <h1>Sistem Koperasi - Daftar Item</h1>
+                <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
+            `;
+            
+            // Add print footer
+            const printFooter = document.createElement('div');
+            printFooter.className = 'print-footer';
+            printFooter.innerHTML = `
+                <p>Total Item: ${itemManager.items.length}</p>
+                <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+            `;
+            
+            // Insert elements
+            const content = document.querySelector('.content');
+            content.insertBefore(printHeader, content.firstChild);
+            content.appendChild(printFooter);
+            
+            // Print
+            window.print();
+            
+            // Remove print elements after printing
+            setTimeout(() => {
+                printHeader.remove();
+                printFooter.remove();
+            }, 1000);
+        }
+
+        // Initialize item manager
+        let itemManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            itemManager = new ItemManager();
+        });
+    </script>
+</body>
+</html>

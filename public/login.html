@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistem Faktur</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-store fa-3x" style="color: #667eea; margin-bottom: 1rem;"></i>
+                <h1>Sistem Faktur</h1>
+                <p>Silakan masuk ke akun Anda</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           class="form-control"
+                           placeholder="Masukkan username"
+                           value="admin"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           class="form-control"
+                           placeholder="Masukkan password"
+                           value="admin"
+                           required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Check if already logged in
+        if (AuthUtils.getToken() && AuthUtils.getUser()) {
+            window.location.replace('/dashboard.html');
+        }
+
+        async function performLogin(formData) {
+            const response = await fetch('http://localhost:4000/api/v1/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Login gagal');
+            }
+
+            return await response.json();
+        }
+
+        function redirectToDashboard() {
+            // Force redirect with multiple methods
+            window.location.href = '/dashboard.html';
+
+            // Fallback methods
+            setTimeout(() => {
+                if (window.location.pathname.includes('login')) {
+                    window.location.replace('/dashboard.html');
+                }
+            }, 100);
+
+            setTimeout(() => {
+                if (window.location.pathname.includes('login')) {
+                    window.location.assign('/dashboard.html');
+                }
+            }, 300);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Disable form
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuat...';
+            submitBtn.disabled = true;
+
+            // Get form data
+            const formData = {
+                username: form.username.value.trim(),
+                password: form.password.value.trim()
+            };
+
+            try {
+                // Clear any existing alerts
+                document.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+                console.log('Attempting login...', formData.username);
+
+                let response;
+                // Try with ApiUtils first, fallback to fetch
+                try {
+                    response = await ApiUtils.post('/auth/login', formData);
+                } catch (apiError) {
+                    console.warn('ApiUtils failed, trying fetch:', apiError);
+                    response = await performLogin(formData);
+                }
+
+                console.log('Login response:', response);
+
+                if (response && response.token && response.user) {
+                    // Store authentication data immediately
+                    localStorage.setItem('auth_token', response.token);
+                    localStorage.setItem('user_data', JSON.stringify(response.user));
+
+                    // Also try AuthUtils if available
+                    if (window.AuthUtils) {
+                        AuthUtils.setToken(response.token);
+                        AuthUtils.setUser(response.user);
+                    }
+
+                    // Show success message
+                    if (window.UIUtils) {
+                        UIUtils.showSuccess('Login berhasil! Mengalihkan...');
+                    }
+
+                    console.log('Auth data stored, redirecting...');
+
+                    // Redirect immediately
+                    redirectToDashboard();
+
+                    // Don't restore button state since we're redirecting
+                    return;
+
+                } else {
+                    console.error('Invalid response format:', response);
+                    throw new Error('Format response tidak valid');
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+
+                let errorMessage = 'Terjadi kesalahan saat login';
+                if (error.message.includes('401') || error.message.includes('password') || error.message.includes('username')) {
+                    errorMessage = 'Username atau password salah';
+                } else if (error.message.includes('400')) {
+                    errorMessage = 'Data login tidak lengkap';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Terjadi kesalahan server';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+
+                if (window.UIUtils) {
+                    UIUtils.showError(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
+
+                // Restore button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Remove alerts when typing
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', () => {
+                document.querySelectorAll('.alert').forEach(alert => alert.remove());
+            });
+        });
+
+        // Debug logging
+        console.log('Login page loaded');
+        console.log('AuthUtils available:', !!window.AuthUtils);
+        console.log('ApiUtils available:', !!window.ApiUtils);
+        console.log('UIUtils available:', !!window.UIUtils);
+    </script>
+</body>
+</html>
